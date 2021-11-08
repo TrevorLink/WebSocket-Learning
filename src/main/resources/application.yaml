@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: websocket-chatroom
+  mvc:
+    view:
+      suffix: .html
+      prefix: /html/
+#登录用的测试密码,需要自行修改
+login:
+  test:
+    password: 123456
