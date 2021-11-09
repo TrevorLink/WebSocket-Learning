@@ -32,6 +32,7 @@ $(function () {
         //转JSON
         var res = JSON.parse(dataStr);
         if (res.system) {
+            //是系统推送的广播数据
             var names = res.message;
             var friendsStr="";
             var broadcastStr="";
@@ -51,9 +52,18 @@ $(function () {
             //是用户发送的数据
             var data=res.message;
             var cnt = "<div class=\"atalk\"><span id=\"asay\">"+data+"</span></div>"
-            $("#chatCnt").append(cnt);
+            //重点！！为了防止第三方乱入，我们需要判断服务端广播过来的数据是否是只有发送方和接收方的
+            if (toName==res.fromName) {//只有当和我聊的这个人就是我收到消息的发送的人的时候，我才显示消息
+                $("#chatCnt").append(cnt);
+            }
+            //获取到和发送方的聊天数据
+            var chatData = sessionStorage.getItem(res.fromName);
+            if (chatData!=null){
+                cnt+= chatData;
+            }
+            //我和发送方的消息记录更新保存
+            sessionStorage.setItem(res.fromName,cnt)
         }
-
     }
     //连接关闭触发事件
     ws.onclose = function () {
@@ -75,6 +85,13 @@ $(function () {
         //与此同时把我们刚发的显示在页面右边
         var cnt = "<div  class=\"btalk\"><span id=\"bsay\">" + message+ "</span></div>";
         $("#chatCnt").append(cnt);
+        //获取到我们和这个聊天的人的消息记录
+        var chatData = sessionStorage.getItem(toName)
+        if (chatData != null) {
+            cnt=chatData+cnt;
+        }
+        //我和接收方的消息记录更新保存
+        sessionStorage.setItem(toName,cnt)
     })
 })
 
@@ -83,4 +100,11 @@ function chatWith(name) {
     toName=name;
     $('#chatMeu').append('<p id="p1" style="text-align: center">正在和<b style="color: #db41ca ">' + name + '</b>聊天</p>');
     $('#chatMain').css("display", "inline");
+    //清空聊天区
+    $("#chatCnt").html("");
+    var chatData = sessionStorage.getItem(toName);
+    //只要有聊天记录就展示（不是追加，因为已经清空，这边只是一个查找然后展示）
+    if (chatData!=null){
+        $("#chatCnt").html(chatData);
+    }
 }

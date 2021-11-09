@@ -1,6 +1,5 @@
 package com.niao.websocket;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.niao.config.GetHttpSessionConfig;
 import com.niao.pojo.Message;
@@ -80,12 +79,13 @@ public class ChatEndPoint {
 
    @OnMessage//收到客户端的消息时触发
    public void onMessage(String message, Session session) {
-      //我们需要把我们收到的JSON字符串封装成为message对象
       ObjectMapper objectMapper = new ObjectMapper();
       try {
+         //我们需要把我们收到的JSON字符串封装成为message对象
          Message readValue = objectMapper.readValue(message, Message.class);
          //从HttpSession中获取当前是谁发送的，用于工具类最终的封装标识
         String fromName=(String) httpSession.getAttribute("username");
+        //获得最终要发送的目的消息
          String res = MessageUtils.getMessage(false, fromName, readValue.getMessage());
          //从在线用户双列集合里找到我们目的用户对应的EndPoint才能发送
          onlineUsers.get(readValue.gettoName()).session.getBasicRemote().sendText(res);
@@ -96,6 +96,11 @@ public class ChatEndPoint {
 
    @OnClose//关闭连接时触发
    public void onClose(Session session) {
-
+      String username = (String) httpSession.getAttribute("username");
+      //把自己从在线的列表里删除
+      onlineUsers.remove(username);
+      //获取发送信息（更新在线用户列表）
+      String message = MessageUtils.getMessage(true, null, onlineUsers.keySet());
+      broadcastAllUsers(message);
    }
 }
